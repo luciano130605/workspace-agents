@@ -1,0 +1,5 @@
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+import { VitePWA } from 'vite-plugin-pwa';
+export default defineConfig({ plugins: [react(), tailwindcss(), VitePWA({ registerType: 'prompt', strategies: 'generateSW', workbox: { importScripts: ['/push-sw.js'], navigateFallback: '/index.html', navigateFallbackDenylist: [/^\/api/], globPatterns: ['**/*.{js,css,html,png,svg,woff2}'] }, manifest: { name: 'Pulse · Monitor de Codex', short_name: 'Pulse', lang: 'es', start_url: '/', scope: '/', display: 'standalone', background_color: '#101413', theme_color: '#101413', icons: [{ src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }, { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' }, { src: '/icons/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' }] } })], server: { host: '127.0.0.1', port: 5173, strictPort: true, proxy: { '/api': 'http://127.0.0.1:4318' } }, preview: { host: '127.0.0.1' } });
