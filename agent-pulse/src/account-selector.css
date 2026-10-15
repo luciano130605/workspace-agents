@@ -1,0 +1,73 @@
+
+:root[data-provider=claude] { --accent: #eda782; --accent-ink: #382015; --hero: #30231e; }
+:root[data-provider=claude][data-theme=light] { --accent: #a64b26; --accent-ink: #fff; --hero: #f4e5db; }
+:root[data-provider=claude] .nav-item.selected { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+:root[data-provider=claude] .hero, :root[data-provider=claude] .pill, :root[data-provider=claude] .orbit { border-color: color-mix(in srgb, var(--accent) 22%, transparent); }
+:root[data-provider=claude] .orbital { background: radial-gradient(ellipse, #df916830 0, transparent 62%); }
+:root[data-provider=claude] .core { background: linear-gradient(140deg, #f4bc99, #cb7955); color: #45291c; box-shadow: 0 0 65px #df916830; }
+:root[data-provider=claude] .orbit-node { background: var(--hero); border-color: #cf825540; color: var(--accent); }
+:root[data-provider=claude] .orbit-dot { background: var(--accent); box-shadow: 0 0 18px var(--accent); }
+:root[data-provider=claude] .tp.dark { --h: #30231e; --a: #eda782; }
+:root[data-provider=claude] .tp.light { --h: #f4e5db; --a: #a64b26; }
+.account-selector { position: relative; margin-top: 16px; }
+.account-trigger { width: 100%; padding: 11px 9px; gap: 10px; justify-content: flex-start; text-align: left; border-radius: 15px; background: var(--panel); border-color: var(--border); min-height: 64px; transition: background .18s, border-color .18s; }
+.account-avatar { display: grid; place-items: center; width: 36px; height: 36px; flex-shrink: 0; border-radius: 11px; color: var(--provider-ink); background: var(--provider-bg); border: 1px solid color-mix(in srgb, var(--provider-ink) 16%, transparent); }
+.account-avatar.codex { --provider-ink: var(--accent); --provider-bg: color-mix(in srgb, var(--accent) 10%, var(--panel)); }
+.account-avatar.claude { --provider-ink: #d58f6d; --provider-bg: #d58f6d14; }
+:root[data-theme=light] .account-avatar.claude { --provider-ink: #a64b26; }
+.account-trigger-copy { display: grid; gap: 4px; min-width: 0; flex: 1; }
+.account-trigger-copy > span { font-size: .62rem; color: var(--muted); }
+.account-trigger-copy strong { font-size: .78rem; font-weight: 600; white-space: nowrap; }
+.account-chevron { color: var(--muted); flex-shrink: 0; transition: transform .2s; }
+.account-trigger[aria-expanded=true] { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); background: var(--raised); }
+.account-trigger[aria-expanded=true] .account-chevron { transform: rotate(180deg); color: var(--accent); }
+.account-popover { position: absolute; left: 0; bottom: calc(100% + 12px); width: 310px; max-width: calc(100vw - 32px); max-height: calc(100dvh - 110px); overflow-y: auto; padding: 8px; z-index: 25; background: var(--panel); border: 1px solid var(--border); border-radius: 20px; box-shadow: 0 18px 55px #0003, 0 3px 10px #0001; transform-origin: bottom left; animation: account-reveal .18s ease-out; }
+.account-heading { padding: 15px 13px 18px; }
+.account-heading > span { font-size: .54rem; letter-spacing: 1.7px; font-weight: 650; color: var(--muted); }
+.account-heading h2 { font-size: 1rem; letter-spacing: -.4px; margin-top: 8px; }
+.account-heading p { font-size: .71rem; margin-top: 5px; }
+.account-options { display: grid; gap: 6px; }
+.account-option { width: 100%; justify-content: flex-start; padding: 12px 10px; gap: 10px; border-radius: 13px; background: transparent; border-color: transparent; text-align: left; min-height: 70px; }
+.account-option.selected { background: color-mix(in srgb, var(--accent) 7%, var(--panel)); border-color: color-mix(in srgb, var(--accent) 27%, var(--border)); }
+.account-option.codex .account-avatar { --provider-ink: #90b96f; --provider-bg: #90b96f12; }
+:root[data-theme=light] .account-option.codex .account-avatar { --provider-ink: #436c2d; }
+.account-option-copy { display: grid; gap: 5px; min-width: 0; }
+.account-option-copy strong { display: flex; align-items: center; gap: 7px; font-size: .79rem; font-weight: 600; }
+.account-option-copy small { font-size: .63rem; }
+.account-badge { color: var(--muted); border: 1px solid var(--border); border-radius: 5px; font-size: .43rem; letter-spacing: .5px; padding: 3px 4px; font-weight: 550; }
+.account-check { display: grid; place-items: center; margin-left: auto; width: 18px; height: 18px; flex-shrink: 0; border: 1px solid var(--border); border-radius: 50%; }
+.account-option.selected .account-check { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
+.account-footer { margin: 10px 6px 0; padding: 13px 7px 8px; border-top: 1px solid var(--border); }
+.account-status { display: flex; align-items: center; gap: 6px; font-size: .66rem; font-weight: 550; color: var(--muted); }
+.account-status i { width: 5px; height: 5px; background: currentColor; border-radius: 50%; }
+.account-status.connected { color: var(--accent); }
+.account-footer p { font-size: .64rem; line-height: 1.6; margin-top: 6px; }
+.sidebar.is-collapsed .account-trigger { justify-content: center; padding: 8px 0; min-height: 52px; }
+.sidebar.is-collapsed .account-trigger-copy, .sidebar.is-collapsed .account-chevron { display: none; }
+@media (hover: hover) { .account-trigger:hover, .account-option:hover { background: var(--raised); border-color: color-mix(in srgb, var(--accent) 30%, var(--border)); } }
+@keyframes account-reveal { from { opacity: 0; transform: translateY(6px) scale(.98); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .account-popover { animation: none; } .account-selector * { transition: none; } }
+
+/* Compact account switcher in the mobile header. */
+@media (max-width: 800px) {
+    .topbar { gap: 8px; }
+    .top-actions { gap: 4px; }
+    .account-selector-mobile { margin: 0; flex-shrink: 0; }
+    .account-selector-mobile .account-trigger { width: 56px; min-height: 44px; padding: 5px; gap: 3px; border-radius: 12px; }
+    .account-selector-mobile .account-avatar { width: 28px; height: 30px; border: 0; border-radius: 8px; }
+    .account-selector-mobile .account-avatar svg { width: 17px; height: 17px; }
+    .account-selector-mobile .account-trigger-copy { display: none; }
+    .account-selector-mobile .account-chevron { width: 12px; transform: rotate(180deg); }
+    .account-selector-mobile .account-trigger[aria-expanded=true] .account-chevron { transform: rotate(0); }
+    .account-selector-mobile .account-popover {
+        position: fixed;
+        top: calc(74px + env(safe-area-inset-top));
+        bottom: auto;
+        left: auto;
+        right: max(16px, env(safe-area-inset-right));
+        width: 310px;
+        max-width: calc(100vw - 32px - env(safe-area-inset-right));
+        max-height: calc(100dvh - 100px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+        transform-origin: top right;
+    }
+}

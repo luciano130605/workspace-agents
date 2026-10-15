@@ -8,17 +8,21 @@ export const codexHome=process.env.CODEX_HOME||path.join(os.homedir(),'.codex');
 const cache=new Map();
 export function parseEvents(text,now=Date.now()){
  let tokens=null,limits=null,limitAt=null,lastAt=null,phase='unknown',startedAt=null;
- for(const line of text.split('\n')){let row;try{row=JSON.parse(line)}catch{continue}if(row.type!=='event_msg')continue;const p=row.payload||{};lastAt=row.timestamp||lastAt;
+ for(const line of text.split('\n')){let row;try{row=JSON.parse(line)}catch{continue}const p=row.payload||{};
+ if(row.type==='response_item'&&['message','function_call','function_call_output','custom_tool_call','custom_tool_call_output'].includes(p.type)){lastAt=row.timestamp||lastAt;if(p.role!=='user'&&phase!=='waiting')phase='running';continue}
+ if(row.type!=='event_msg')continue;lastAt=row.timestamp||lastAt;
  if(phase==='unknown'&&['token_count','item_completed'].includes(p.type))phase='running';
  if(p.type==='task_started'){phase='running';startedAt=row.timestamp}
  if(['task_complete','task_completed'].includes(p.type))phase='completed';
  if(['turn_aborted','task_aborted'].includes(p.type))phase='interrupted';
+ if(['approval_requested','request_user_input'].includes(p.type))phase='waiting';
+ if(['task_failed','turn_failed'].includes(p.type))phase='error';
  if(p.type==='token_count'){if(p.info)tokens=p.info;if(p.rate_limits){limits=p.rate_limits;limitAt=row.timestamp}}
  }
  if(phase==='running'&&now-Date.parse(lastAt)>180000)phase='unknown';
  return {tokens,limits,limitAt,lastAt,phase,startedAt};
 }
-async function tail(file){const stat=await fs.stat(file);const previous=cache.get(file);if(previous?.mtime===stat.mtimeMs)return parseEvents(previous.text);const f=await fs.open(file,'r');try{const size=Math.min(stat.size,2*1024*1024);const b=Buffer.alloc(size);await f.read(b,0,size,stat.size-size);let text=b.toString('utf8');if(stat.size>size)text=text.slice(text.indexOf('\n')+1);cache.set(file,{mtime:stat.mtimeMs,text});if(cache.size>100)cache.delete(cache.keys().next().value);return parseEvents(text)}finally{await f.close()}}
+export async function tail(file){const stat=await fs.stat(file);const previous=cache.get(file);if(previous?.mtime===stat.mtimeMs&&previous?.size===stat.size)return parseEvents(previous.text);const f=await fs.open(file,'r');try{const size=Math.min(stat.size,2*1024*1024);const b=Buffer.alloc(size);await f.read(b,0,size,stat.size-size);let text=b.toString('utf8');if(stat.size>size)text=text.slice(text.indexOf('\n')+1);cache.set(file,{mtime:stat.mtimeMs,size:stat.size,text});if(cache.size>100)cache.delete(cache.keys().next().value);return parseEvents(text)}finally{await f.close()}}
 export function normalizeLimits(raw,at,source){if(!raw)return null;const map=w=>w?{usedPercent:w.usedPercent??w.used_percent,windowMinutes:w.windowDurationMins??w.window_minutes,resetsAt:w.resetsAt??w.resets_at}:null;return{primary:map(raw.primary),secondary:map(raw.secondary),plan:raw.planType??raw.plan_type??null,observedAt:at,source}}
 export async function readLocal(){
  const names=(await fs.readdir(codexHome)).filter(x=>/^state_\d+\.sqlite$/.test(x)).sort((a,b)=>Number(b.match(/\d+/)[0])-Number(a.match(/\d+/)[0]));if(!names.length)throw new Error('No se encontró la base local de Codex. Abrí Codex en esta computadora o configurá CODEX_HOME.');
@@ -26,7 +30,7 @@ export async function readLocal(){
  let limits=null;
  const agents=await Promise.all(rows.map(async row=>{let event={};try{const resolved=path.resolve(row.rollout_path);const relative=path.relative(path.resolve(codexHome),resolved);if(relative.startsWith('..')||path.isAbsolute(relative))throw new Error('Ruta fuera de Codex');event=await tail(resolved)}catch{}
  if(event.limits&&(!limits||Date.parse(event.limitAt)>Date.parse(limits.observedAt)))limits=normalizeLimits(event.limits,event.limitAt,'Eventos locales');
- return{id:row.id,name:row.title||'Sesión sin título',project:path.basename(row.cwd.replaceAll('\\','/')),model:row.model||'Sin datos',status:event.phase||'unknown',updatedAt:event.lastAt||new Date(row.updated_at*1000).toISOString(),startedAt:event.startedAt||null,tokens:event.tokens?.total_token_usage?.total_tokens??row.tokens_used??null,inputTokens:event.tokens?.total_token_usage?.input_tokens??null,outputTokens:event.tokens?.total_token_usage?.output_tokens??null,cachedTokens:event.tokens?.total_token_usage?.cached_input_tokens??null,contextUsed:event.tokens?.last_token_usage?.total_tokens??null,contextMax:event.tokens?.model_context_window??null,source:'Codex local',origin:String(row.source??''),estimated:true};}));return{agents,limits};
+ return{id:row.id,name:row.title||'Sesión sin título',project:path.basename(row.cwd.replaceAll('\\','/')),cwd:row.cwd,model:row.model||'Sin datos',status:event.phase||'unknown',updatedAt:event.lastAt||new Date(row.updated_at*1000).toISOString(),startedAt:event.startedAt||null,tokens:event.tokens?.total_token_usage?.total_tokens??row.tokens_used??null,inputTokens:event.tokens?.total_token_usage?.input_tokens??null,outputTokens:event.tokens?.total_token_usage?.output_tokens??null,cachedTokens:event.tokens?.total_token_usage?.cached_input_tokens??null,contextUsed:event.tokens?.last_token_usage?.total_tokens??null,contextMax:event.tokens?.model_context_window??null,source:'Codex local',origin:String(row.source??''),estimated:true};}));return{agents,limits};
 }
 export async function fetchLiveLimits(){
  const bundled=path.join(codexHome,'packages','app-server-daemon','current','bin',process.platform==='win32'?'codex.exe':'codex');

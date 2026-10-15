@@ -27,9 +27,9 @@ Para desarrollo: npm run dev (frontend http://127.0.0.1:5173, backend 4318). El 
 
 ## Conexión real a Codex
 
-El backend abre state_*.sqlite de CODEX_HOME en **solo lectura** y lee como máximo los últimos 2 MiB del archivo de eventos de cada sesión. No envía prompts, respuestas ni credenciales al navegador. Se transmiten títulos de tarea, proyectos y métricas; los títulos también forman parte de los avisos push.
+El backend abre state_*.sqlite de CODEX_HOME en **solo lectura** y lee como máximo los últimos 2 MiB del archivo de eventos de cada sesión. El panel transmite títulos, proyectos y métricas. Al abrir un chat también transmite los últimos 100 mensajes de usuario y asistente mediante una ruta autenticada y sin caché; excluye razonamiento interno y resultados de herramientas. Los mensajes no se guardan en localStorage. Los títulos también forman parte de los avisos push.
 
-Cada 60 segundos intenta consultar account/rateLimits/read mediante un proceso codex app-server, con initialize/initialized. Nunca inicia turnos ni ejecuta tareas. Encuentra automáticamente el ejecutable de la app de Windows en .codex/packages/app-server-daemon/current/bin/codex.exe, o utiliza codex desde PATH. Se puede configurar CODEX_BIN con una ruta absoluta. La autenticación la administra Codex.
+Cada 60 segundos intenta consultar account/rateLimits/read mediante un proceso codex app-server, con initialize/initialized. Esta consulta no inicia turnos. El control de sesiones utiliza otro proceso persistente: enviar un mensaje puede iniciar o dirigir un turno. La consulta de cupo encuentra automáticamente el ejecutable de la app de Windows en .codex/packages/app-server-daemon/current/bin/codex.exe, o utiliza codex desde PATH. Se puede configurar CODEX_BIN con una ruta absoluta. La autenticación la administra Codex.
 
 Si esa consulta falla, muestra los límites del evento token_count más reciente, con fuente, fecha observada y error de consulta. No lee auth.json. La base y los eventos locales son formatos internos que podrían cambiar; su lector está aislado en server/codex.mjs.
 
@@ -92,4 +92,12 @@ El token se guarda en sessionStorage, solo durante la sesión de esa pestaña. L
 
 ## Límites de esta versión
 
-La conexión es a las sesiones locales de esta computadora; no agrega equipos ni cuentas de Codex Cloud. No controla ni pausa agentes. El servidor debe seguir encendido. El estado de actividad y el contexto son aproximaciones identificadas en pantalla. No hay tiempo de finalización disponible. La háptica es progresiva y puede no funcionar en iOS. El acceso HTTPS desde un celular depende de configurar la red/proxy; no queda publicado automáticamente.
+La conexión es a las sesiones locales de esta computadora; no agrega equipos ni cuentas de Codex Cloud. El control se limita a los turnos cargados en el App Server de Pulse: una sesión trabajando en otra instancia se puede observar, pero no dirigir ni detener desde este proceso. El servidor debe seguir encendido. El estado de actividad y el contexto son aproximaciones identificadas en pantalla. No hay tiempo de finalización disponible. La háptica es progresiva y puede no funcionar en iOS. El acceso HTTPS desde un celular depende de configurar la red/proxy; no queda publicado automáticamente.
+
+
+
+## Control de sesiones Codex
+
+En Agentes, el selector de proyecto filtra las sesiones locales. Inicio prioriza las sesiones en curso e incluye Abrir chat y Detener. El chat conserva borradores en memoria al navegar, actualiza el historial cada 3 segundos mientras la pestaña está visible y permite Enter para enviar / Shift+Enter para un salto de línea. En mobile ocupa la pantalla y adapta su altura al teclado con visualViewport; Atrás cierra el chat. Offline y demo deshabilitan el envío.
+
+Pulse usa thread/read para consultar mensajes y thread/resume, turn/start, turn/steer y turn/interrupt para sus turnos. Si detecta una sesión activa en otra instancia, bloquea el envío para evitar iniciar trabajo paralelo y explica dónde controlarla. No interpreta notLoaded como inactividad global. Documentación: https://learn.chatgpt.com/docs/app-server.
